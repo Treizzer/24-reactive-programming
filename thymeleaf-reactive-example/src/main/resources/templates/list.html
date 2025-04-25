@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Listado reactivo</title>
+  </head>
+
+  <body>
+    <h1>Thymeleaf + Spring WebFlux</h1>
+
+    <table>
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Concepto</th>
+          <th>Importe</th>
+        </tr>
+      </thead>
+
+      <tbody>
+        <tr th:each="product:${products}">
+          <td th:text="${product.id}"></td>
+          <td th:text="${product.concept}"></td>
+          <td th:text="${product.amount}"></td>
+        </tr>
+      </tbody>
+    </table>
+  </body>
+</html>
