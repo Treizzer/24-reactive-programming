@@ -38,6 +38,7 @@
         <module>flow-combination-transformation</module>
         <module>exceptions-handling</module>
         <module>thymeleaf-reactive-example</module>
+        <module>hot-cold-publishers</module>
     </modules>
     <!--  -->
 
