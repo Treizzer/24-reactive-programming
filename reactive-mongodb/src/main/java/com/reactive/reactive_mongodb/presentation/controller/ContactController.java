@@ -4,15 +4,18 @@ import java.net.URI;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.reactive.reactive_mongodb.presentation.dto.ContactDto;
 import com.reactive.reactive_mongodb.presentation.dto.ContactInsertDto;
+import com.reactive.reactive_mongodb.presentation.dto.ContactUpdateDto;
 import com.reactive.reactive_mongodb.service.interfaces.ICommonService;
 
 import reactor.core.publisher.Flux;
@@ -23,7 +26,7 @@ import reactor.core.publisher.Mono;
 public class ContactController {
 
     @Autowired
-    private ICommonService<ContactDto, ContactInsertDto> service;
+    private ICommonService<ContactDto, ContactInsertDto, ContactUpdateDto> service;
 
     @GetMapping
     public Flux<ContactDto> findAll() {
@@ -32,7 +35,7 @@ public class ContactController {
 
     @GetMapping("/{id}")
     public Mono<ResponseEntity<ContactDto>> findById(@PathVariable String id) {
-        if (Long.parseLong(id) <= 0) {
+        if (id.isBlank()) {
             return Mono.just(ResponseEntity.badRequest().build());
         }
 
@@ -59,6 +62,28 @@ public class ContactController {
                 .created(URI.create("/api/v1/contacts/" + c.getId()))
                 .body(c)
             );
+    }
+
+    @PutMapping({"/{id}", ""})
+    public Mono<ResponseEntity<ContactDto>> update(@RequestBody ContactUpdateDto updateDto, 
+        @PathVariable(required = false) String id) {
+        // if (id.isBlank()) {
+        //     return Mono.just(ResponseEntity.badRequest().build());
+        // }
+        return service.update(updateDto, id)
+            .map(c -> ResponseEntity.ok(c))
+            .defaultIfEmpty(ResponseEntity.notFound().build());
+    }
+
+    @DeleteMapping("/{id}")
+    public Mono<ResponseEntity<ContactDto>> deleteById(@PathVariable String id) {
+        if (id.isBlank()) {
+            return Mono.just(ResponseEntity.badRequest().build());
+        }
+
+        return service.deleteById(id)
+            .map(c -> ResponseEntity.ok(c))
+            .defaultIfEmpty(ResponseEntity.notFound().build());
     }
     
 }

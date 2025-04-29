@@ -1,23 +1,27 @@
 package com.reactive.reactive_mongodb.service.implementation;
 
+import java.util.Optional;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.reactive.reactive_mongodb.persistence.entity.ContactEntity;
 import com.reactive.reactive_mongodb.persistence.repository.IContactRespository;
+import com.reactive.reactive_mongodb.presentation.advice.custom.InfoNotFoundException;
 import com.reactive.reactive_mongodb.presentation.dto.ContactDto;
 import com.reactive.reactive_mongodb.presentation.dto.ContactInsertDto;
+import com.reactive.reactive_mongodb.presentation.dto.ContactUpdateDto;
 import com.reactive.reactive_mongodb.service.interfaces.ICommonService;
 
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 @Service
-public class ContactService implements ICommonService<ContactDto, ContactInsertDto> {
+public class ContactService implements ICommonService<ContactDto, ContactInsertDto, ContactUpdateDto> {
 
     @Autowired
-    private IContactRespository respository;
+    private IContactRespository repository;
 
     private ContactDto convertToDto(ContactEntity entity) {
         return new ContactDto(
@@ -39,7 +43,7 @@ public class ContactService implements ICommonService<ContactDto, ContactInsertD
     @Override
     @Transactional(readOnly = true)
     public Flux<ContactDto> findAll() {
-        Flux<ContactDto> contacts = respository.findAll()
+        Flux<ContactDto> contacts = repository.findAll()
             .map(c -> {
                 return new ContactDto(c.getId(), c.getName(), c.getEmail(), c.getPhone());
             });
@@ -50,9 +54,9 @@ public class ContactService implements ICommonService<ContactDto, ContactInsertD
     @Override
     @Transactional(readOnly = true)
     public Mono<ContactDto> findById(String id) {
-        Mono<ContactDto> contact = respository.findById(id)
+        Mono<ContactDto> contact = repository.findById(id)
             .switchIfEmpty(
-                Mono.error(new RuntimeException("No se encontró el contacto con ID: " + id))
+                Mono.error(new InfoNotFoundException("No se encontró el contacto con ID: " + id))
             )
             .map(this::convertToDto);
 
@@ -62,9 +66,9 @@ public class ContactService implements ICommonService<ContactDto, ContactInsertD
     @Override
     @Transactional(readOnly = true)
     public Mono<ContactDto> findByEmail(String email) {
-        Mono<ContactDto> contact = respository.findByEmail(email)
+        Mono<ContactDto> contact = repository.findByEmail(email)
             .switchIfEmpty(
-                Mono.error(new RuntimeException("No se encontró el contacto con email: " + email))
+                Mono.error(new InfoNotFoundException("No se encontró el contacto con email: " + email))
             )
             .map(this::convertToDto);
 
@@ -75,9 +79,50 @@ public class ContactService implements ICommonService<ContactDto, ContactInsertD
     @Transactional
     public Mono<ContactDto> save(ContactInsertDto insertDto) {
         ContactEntity entity = this.convertToEntity(insertDto);
-        return respository.save(entity)
+        return repository.save(entity)
             .map(this::convertToDto)
             .onErrorMap(e -> new UnsupportedOperationException("No fue posible guardar el contacto: " + insertDto + " ---> e: " + e.toString()));
+    }
+
+    @Override
+    @Transactional
+    public Mono<ContactDto> update(ContactUpdateDto updateDto, String id) {
+        Mono<ContactEntity> entity = (id != null && !id.isBlank())
+            ? repository.findById(id)
+                .switchIfEmpty(
+                    Mono.error(new InfoNotFoundException("No se encontró el contacto con ID: " + id))
+                )
+            : repository.findById(updateDto.getId())
+                .switchIfEmpty(
+                    Mono.error(new InfoNotFoundException("No se encontró el contacto con ID: " + updateDto.getId()))
+                );
+
+        Mono<ContactDto> dto = entity.flatMap(contact -> {
+            Optional.ofNullable(updateDto.getName()).ifPresent(contact::setName);
+            Optional.ofNullable(updateDto.getEmail()).ifPresent(contact::setEmail);
+            Optional.ofNullable(updateDto.getPhone()).ifPresent(contact::setPhone);
+            
+            return repository.save(contact)
+                .map(this::convertToDto);
+            // return contact;
+        })
+        // .map(this::convertToDto)
+        .onErrorMap(e -> 
+            new UnsupportedOperationException("Error al actualizar el contacto: " + e.getMessage(), e)
+        );
+        
+        return dto;
+    }
+
+    @Override
+    @Transactional
+    public Mono<ContactDto> deleteById(String id) {
+        return this.findById(id)
+            .flatMap(dto -> 
+                repository.deleteById(id)
+                    .thenReturn(dto)  
+            )
+            .log("Deleted Contact");
     }
 
     @Override
