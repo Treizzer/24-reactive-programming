@@ -40,6 +40,7 @@
         <module>thymeleaf-reactive-example</module>
         <module>hot-cold-publishers</module>
         <module>webflux-reactive-annotations</module>
+        <module>reactive-mongodb</module>
     </modules>
     <!--  -->
 
