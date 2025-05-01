@@ -7,7 +7,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.reactive.reactive_mongodb.persistence.entity.ContactEntity;
-import com.reactive.reactive_mongodb.persistence.repository.IContactRespository;
+import com.reactive.reactive_mongodb.persistence.repository.IContactRepository;
 import com.reactive.reactive_mongodb.presentation.advice.custom.InfoNotFoundException;
 import com.reactive.reactive_mongodb.presentation.dto.ContactDto;
 import com.reactive.reactive_mongodb.presentation.dto.ContactInsertDto;
@@ -21,7 +21,7 @@ import reactor.core.publisher.Mono;
 public class ContactService implements ICommonService<ContactDto, ContactInsertDto, ContactUpdateDto> {
 
     @Autowired
-    private IContactRespository repository;
+    private IContactRepository repository;
 
     private ContactDto convertToDto(ContactEntity entity) {
         return new ContactDto(

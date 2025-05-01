@@ -10,7 +10,7 @@ import reactor.core.publisher.Mono;
 
 
 @Repository
-public interface IContactRespository extends ReactiveMongoRepository<ContactEntity, String> {
+public interface IContactRepository extends ReactiveMongoRepository<ContactEntity, String> {
 
     Mono<ContactEntity> findByEmail(String email);
 

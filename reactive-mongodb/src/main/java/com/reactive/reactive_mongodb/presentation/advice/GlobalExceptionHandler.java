@@ -16,7 +16,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(InfoNotFoundException.class)
     public ResponseEntity<Map<String, String>> handleInfoNotFoundException(InfoNotFoundException e) {
         return ResponseEntity.status(HttpStatus.NOT_FOUND)
-            .body(Map.of("NOT FOUND: ", e.getMessage()));
+            .body(Map.of("NOT FOUND", e.getMessage()));
     }
 
     // HttpMessageNotReadableException: To handle cases where the request body is
@@ -24,7 +24,7 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(HttpMessageNotReadableException.class)
     public ResponseEntity<Map<String, String>> handleHttpMessageNotReadableException(HttpMessageNotReadableException e) {
         return ResponseEntity.badRequest()
-            .body(Map.of("BAD REQUEST: ", "The request body is not readable --- " + e.getMessage()));
+            .body(Map.of("BAD REQUEST", "The request body is not readable --- " + e.getMessage()));
     }
 
     // General Exceptions
@@ -32,12 +32,12 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(NullPointerException.class)
     public ResponseEntity<Map<String, String>> handleNullPointerException(NullPointerException e) {
         return ResponseEntity.badRequest()
-            .body(Map.of("BAD REQUEST: ", e.getMessage()));
+            .body(Map.of("BAD REQUEST", e.getMessage()));
     }
 
     public ResponseEntity<Map<String, String>> handleGlobalException(Exception e) {
         return ResponseEntity.internalServerError()
-            .body(Map.of("An unexpected error ocurred: ", e.getMessage()));
+            .body(Map.of("An unexpected error ocurred", e.getMessage()));
     }
 
 }
