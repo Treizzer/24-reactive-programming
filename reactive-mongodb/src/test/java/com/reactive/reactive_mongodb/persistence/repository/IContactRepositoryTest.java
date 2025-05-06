@@ -90,34 +90,60 @@ public class IContactRepositoryTest {
     public void testUpdate() {
         String email = "pacoP@mail.com";
         String phone = "1010";
-        Mono<ContactEntity> updatedContact = repository.findByEmail(email)
-            .map(contact -> {
-                contact.setPhone(phone);
-                return contact;
-            })
-            .flatMap(contact -> {
-                return repository.save(contact);
-            });
 
-        StepVerifier.create(updatedContact.log())
-            .expectSubscription()
-            .expectNextMatches(contact -> contact.getPhone().equals(phone))
-            .verifyComplete();
+        // Mono<ContactEntity> updatedContact = repository.findByEmail(email)
+        //     .map(contact -> {
+        //         contact.setPhone(phone);
+        //         return contact;
+        //     })
+        //     .flatMap(contact -> {
+        //         return repository.save(contact);
+        //     });
+        // StepVerifier.create(updatedContact.log())
+        //     .expectSubscription()
+        //     .expectNextMatches(contact -> contact.getPhone().equals(phone))
+        //     .verifyComplete();
+    
+        StepVerifier.create(
+            repository.findByEmail(email)
+                .flatMap(contact -> {
+                    contact.setPhone(phone);
+                    return repository.save(contact); // Save reactively
+                })
+                // Retrive to validate update
+                .flatMap(updated -> repository.findById(updated.getId()))
+                .log()
+        )
+        .expectSubscription()
+        // Validate phone number
+        .expectNextMatches(contact -> contact.getPhone().equals(phone))
+        .verifyComplete();
     }
 
     @Test
     @Order(5)
     public void testDeleteById() {
         String email = "pacoP@mail.com";
-        Mono<Void> deleted = repository.findByEmail(email)
-            .flatMap(contact -> 
-                repository.deleteById(contact.getId())
-            )
-            .log();
-
-        StepVerifier.create(deleted)
-            .expectSubscription()
-            .verifyComplete();
+        // Mono<Void> deleted = repository.findByEmail(email)
+        //     .flatMap(contact -> 
+        //         repository.deleteById(contact.getId())
+        //     )
+        //     .log();
+        // StepVerifier.create(deleted)
+        //     .expectSubscription()
+        //     .verifyComplete();
+    
+        StepVerifier.create(
+            repository.findByEmail(email)
+                .flatMap(contact -> 
+                    repository.deleteById(contact.getId())
+                        .then(repository.findById(contact.getId()))
+                )
+                .log()
+        )
+        .expectSubscription()
+        .expectNextCount(0) // Expect no elements after deletion
+        .verifyComplete();
     }
 
     @Test
@@ -146,3 +172,49 @@ public class IContactRepositoryTest {
     }
     
 }
+
+
+
+
+
+
+// Suggest
+// @SpringBootTest
+// @TestMethodOrder(MethodOrderer.OrderAnnotation.class)
+// public class IContactRepositoryTest {
+
+//     @Autowired
+//     private IContactRepository repository;
+
+//     @BeforeEach
+//     public void setupData() {
+//         repository.deleteAll()
+//             .thenMany(repository.saveAll(Flux.just(
+//                 new ContactEntity("Hugo", "hugoP@mail.com", "111"),
+//                 new ContactEntity("Paco", "pacoP@mail.com", "222"),
+//                 new ContactEntity("Luis", "luisP@mail.com", "333")
+//             )))
+//             .block(); // Clean DB before each test
+//     }
+
+//     @Test
+//     @Order(1)
+//     public void testFindAll() {
+//         StepVerifier.create(repository.findAll().log())
+//             .expectSubscription()
+//             .expectNextCount(3)
+//             .verifyComplete();
+//     }
+
+//     @Test
+//     @Order(3)
+//     public void testFindByEmail() {
+//         String email = "pacoP@mail.com";
+
+//         StepVerifier.create(repository.findByEmail(email).log())
+//             .expectSubscription()
+//             .expectNextMatches(contact -> contact.getEmail().equals(email))
+//             .verifyComplete();
+//     }
+// }
+
